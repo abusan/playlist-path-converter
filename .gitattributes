@@ -1,0 +1,6 @@
+# Ensure consistent EOL and treat as text
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.m3u8 text eol=lf
