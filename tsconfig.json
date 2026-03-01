@@ -8,8 +8,8 @@
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
     "module": "esnext",
-    "target": "es2020",
-    "types": ["node"],
+    "target": "esnext",
+    // "types": ["node"],
 
     // Other Outputs
     "sourceMap": true,
@@ -24,6 +24,7 @@
     "strict": true,
     "jsx": "react-jsx",
     "verbatimModuleSyntax": true,
+    "moduleResolution": "node",
     "isolatedModules": true,
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
