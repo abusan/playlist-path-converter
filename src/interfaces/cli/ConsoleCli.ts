@@ -14,6 +14,7 @@ export async function runCli() {
   try {
     const input = await parser.parse(process.argv);
     useCase.execute(input);
+    console.log('正常終了');
   } catch (err: any) {
     console.error(err.message || err);
     process.exit(1);
