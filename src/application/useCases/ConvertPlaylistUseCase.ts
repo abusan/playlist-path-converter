@@ -1,4 +1,4 @@
-import type { ConvertInput } from '../dto/ConvertInput.js';
+import type { ConvertInput, Encoding } from '../dto/ConvertInput.js';
 import type { ConvertResult } from '../dto/ConvertResult.js';
 import { PathConversionService } from '../../domain/services/PathConversionService.js';
 
@@ -12,8 +12,8 @@ export interface FileScanner {
 }
 
 export interface FileWriter {
-  read(filePath: string): string;
-  write(filePath: string, content: string): void;
+  read(filePath: string, encoding?: Encoding): string;
+  write(filePath: string, content: string, encoding?: Encoding): void;
   logDryRun?(file: string, original: string, transformed: string): void;
 }
 
@@ -33,6 +33,7 @@ export class ConvertPlaylistUseCase {
       removeHashComments,
       removeEmptyLines,
       dryRunFile,
+      encoding = 'utf8',
     } = input;
 
     let files = this.scanner.listM3u8(scanDir);
@@ -49,7 +50,7 @@ export class ConvertPlaylistUseCase {
 
     for (const file of files) {
       const path = scanDir + '/' + file;
-      const original = this.writer.read(path);
+      const original = this.writer.read(path, encoding);
       const transformed = this.converter.convert(
         original,
         baseDir,
@@ -60,7 +61,7 @@ export class ConvertPlaylistUseCase {
       if (dryRunFile && this.writer.logDryRun) {
         this.writer.logDryRun(file, original, transformed);
       } else {
-        this.writer.write(path, transformed);
+        this.writer.write(path, transformed, encoding);
       }
     }
 

@@ -18,5 +18,8 @@
     "@types/node": "^25.3.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "iconv-lite": "^0.7.2"
   }
 }
