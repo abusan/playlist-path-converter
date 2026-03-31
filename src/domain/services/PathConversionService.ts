@@ -20,7 +20,9 @@ export class PathConversionService {
     removeHashComments: boolean = false,
     removeEmptyLines: boolean = false
   ): string {
-    const absolutePathRegex = /(?:[A-Za-z]:)?[\\/][^\s]+/g;
+    // 空白を含むパスも正しくマッチするよう、改行までの残り全体を対象とする。
+    // m3u8形式では1行1パスのケースが多いため、このほうが安全。
+    const absolutePathRegex = /(?:[A-Za-z]:)?[\\/][^\r\n]*/g;
     const outSep = outputFormat === 'windows' ? '\\' : '/';
 
     const lines = content.split(/\r?\n/);
