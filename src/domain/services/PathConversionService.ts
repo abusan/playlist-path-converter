@@ -30,11 +30,12 @@ export class PathConversionService {
     for (const line of lines) {
       if (removeHashComments && line.trim().startsWith('#')) continue;
       if (removeEmptyLines && line.trim() === '') continue;
-      const newLine = line.replace(absolutePathRegex, (match) => {
+      const normalizedLine = line.normalize('NFC');
+      const newLine = normalizedLine.replace(absolutePathRegex, (match) => {
         const pp = new PlaylistPath(match);
         return pp.toRelative(baseDir, outSep);
       });
-      processed.push(newLine);
+      processed.push(newLine.normalize('NFC'));
     }
     return processed.join('\n');
   }

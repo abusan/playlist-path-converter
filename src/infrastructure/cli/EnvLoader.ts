@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import type { OutputFormat } from '../../domain/services/PathConversionService.js';
+import type { Encoding } from '../../application/dto/ConvertInput.js';
 
 export interface EnvConfig {
   scanDir?: string;
@@ -10,6 +11,7 @@ export interface EnvConfig {
   removeEmptyLines?: boolean;
   dryRun?: boolean;
   dryRunFile?: string;
+  encoding?: Encoding;
 }
 
 /**
@@ -49,5 +51,25 @@ export function configFromEnv(env: Record<string, string>): EnvConfig {
   }
   if (bool(env.OPT_DRY_RUN)) cfg.dryRun = true; else cfg.dryRun = false;
   if (env.OPT_DRY_RUN_FILE) cfg.dryRunFile = env.OPT_DRY_RUN_FILE;
+
+  if (env.OPT_ENCODING) {
+    const enc = env.OPT_ENCODING.trim().toLowerCase();
+    const allowed: Record<string, Encoding> = {
+      'utf8': 'utf8',
+      'utf8-bom': 'utf8-bom',
+      'shift_jis': 'shift_jis',
+      'euc-jp': 'euc-jp',
+      'cp932': 'cp932',
+      'cp51932': 'cp51932',
+      'ascii': 'ascii'
+    };
+    const resolved = allowed[enc];
+    if (resolved) {
+      cfg.encoding = resolved;
+    } else {
+      throw new Error(`unsupported encoding in .env: ${env.OPT_ENCODING}`);
+    }
+  }
+
   return cfg;
 }

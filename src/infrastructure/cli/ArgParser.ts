@@ -1,5 +1,5 @@
 import * as readline from 'readline';
-import type { ConvertInput } from '../../application/dto/ConvertInput.js';
+import type { ConvertInput, Encoding } from '../../application/dto/ConvertInput.js';
 import { configFromEnv, parseEnvFile } from './EnvLoader.js';
 import type { OutputFormat } from '../../domain/services/PathConversionService.js';
 
@@ -50,25 +50,63 @@ export class ArgParser {
     let dryRunFile: string | undefined = envCfg.dryRunFile;
 
     let loadEnvMode = false;
+    let encoding: Encoding | undefined = envCfg.encoding;
     const args = argv.slice(2);
 
+    const parseEncoding = (value?: string): Encoding => {
+      const enc = (value ?? '').trim().toLowerCase();
+      const allowed: Record<string, Encoding> = {
+        'utf8': 'utf8',
+        'utf8-bom': 'utf8-bom',
+        'shift_jis': 'shift_jis',
+        'euc-jp': 'euc-jp',
+        'cp932': 'cp932',
+        'cp51932': 'cp51932',
+        'ascii': 'ascii'
+      };
+      const resolved = allowed[enc];
+      if (!resolved) {
+        throw new Error(`unsupported encoding: ${value}`);
+      }
+      return resolved;
+    };
+
     if (args.length > 0) {
-      args.forEach(arg => {
-        switch (arg.toLowerCase()) {
-          case 'load-env':
-          case '--load-env':
-          case 'env':
-            loadEnvMode = true;
-            break;
+      for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (arg === undefined) continue;
+        const lower = arg.toLowerCase();
+        if (lower === 'load-env' || lower === '--load-env' || lower === 'env') {
+          loadEnvMode = true;
+          continue;
         }
-      });
+
+        if (lower === '--encoding' || lower === '-e') {
+          i += 1;
+          if (i >= args.length) {
+            throw new Error('--encoding requires an argument');
+          }
+          encoding = parseEncoding(args[i]);
+          continue;
+        }
+
+        if (lower.startsWith('--encoding=')) {
+          encoding = parseEncoding(arg.slice('--encoding='.length));
+          continue;
+        }
+
+        if (lower.startsWith('-e=')) {
+          encoding = parseEncoding(arg.slice('-e='.length));
+          continue;
+        }
+      }
 
       if (!loadEnvMode && args.length >= 2) {
         [scanDir, baseDir] = args;
       }
 
       if (!loadEnvMode) {
-        args.forEach(arg => {
+        for (const arg of args) {
           switch (arg.toLowerCase()) {
             case 'backup':
             case 'bk':
@@ -106,12 +144,12 @@ export class ArgParser {
               }
               break;
             default:
-              if (arg.startsWith('-')) {
+              if (arg.startsWith('-') && !arg.toLowerCase().startsWith('--encoding') && !arg.toLowerCase().startsWith('-e')) {
                 console.warn(`警告: 不明なオプション "${arg}" は無視されます。`);
               }
               break;
           }
-        });
+        }
       }
     } else {
       // interactive prompts
@@ -137,6 +175,9 @@ export class ArgParser {
       if (bk) {
         makeBackup = true;
       }
+
+      const enc = await askQuestion('エンコードを指定してください (utf8, utf8-bom, shift_jis, euc-jp, cp932, cp51932, ascii)', envCfg.encoding || 'utf8');
+      encoding = parseEncoding(enc);
 
       const dr = await askYesNo('dry-run を行いますか？ (指定する場合はファイル名を入力)', !!envCfg.dryRun);
       if (dr) {
@@ -169,6 +210,7 @@ export class ArgParser {
       if (cfg.makeBackup         !== undefined) makeBackup = cfg.makeBackup;
       if (cfg.removeHashComments !== undefined) removeHashComments = cfg.removeHashComments;
       if (cfg.removeEmptyLines   !== undefined) removeEmptyLines = cfg.removeEmptyLines;
+      if (cfg.encoding          !== undefined) encoding = cfg.encoding;
       if (cfg.dryRun             !== undefined) {
         if (cfg.dryRun && !cfg.dryRunFile) {
           throw new Error('.env から dry-run を有効にする場合は OPT_DRY_RUN_FILE で対象ファイルを指定してください。');
@@ -191,6 +233,7 @@ export class ArgParser {
       removeHashComments,
       removeEmptyLines,
       dryRunFile,
+      encoding: encoding || 'utf8',
     };
   }
 }
